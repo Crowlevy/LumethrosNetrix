@@ -613,15 +613,17 @@ def detect_live_hosts(local_ip, interface=None):
         if routers > 0 or apple_devices > 0 or unknown > 0 or computers > 0:
             print_header("RESUMO DA REDE", Colors.BRIGHT_MAGENTA)
             if routers > 0:
-                print(f"  {Colors.BRIGHT_YELLOW}{Colors.RESET} {Colors.BRIGHT_WHITE}Routers/Gateways:{Colors.RESET} {Colors.BRIGHT_GREEN}{routers}{Colors.RESET}")
+                print(f"  {Colors.BRIGHT_YELLOW}📡{Colors.RESET} {Colors.BRIGHT_WHITE}Routers/Gateways:{Colors.RESET} {Colors.BRIGHT_GREEN}{routers}{Colors.RESET}")
             if computers > 0:
-                print(f"  {Colors.RED}{Colors.RESET} {Colors.BRIGHT_WHITE}Computadores/Notebooks:{Colors.RESET} {Colors.BRIGHT_GREEN}{computers}{Colors.RESET}")
+                print(f"  {Colors.BRIGHT_CYAN}💻{Colors.RESET} {Colors.BRIGHT_WHITE}Computadores/Notebooks:{Colors.RESET} {Colors.BRIGHT_GREEN}{computers}{Colors.RESET}")
             if apple_devices > 0:
-                print(f"  {Colors.BRIGHT_GREEN}{Colors.RESET} {Colors.BRIGHT_WHITE}Dispositivos Apple:{Colors.RESET} {Colors.BRIGHT_GREEN}{apple_devices}{Colors.RESET}")
+                print(f"  {Colors.BRIGHT_GREEN}🍎{Colors.RESET} {Colors.BRIGHT_WHITE}Dispositivos Apple:{Colors.RESET} {Colors.BRIGHT_GREEN}{apple_devices}{Colors.RESET}")
             if unknown > 0:
-                print(f"  {Colors.BRIGHT_YELLOW}{Colors.RESET} {Colors.BRIGHT_WHITE}Dispositivos Desconhecidos:{Colors.RESET} {Colors.BRIGHT_YELLOW}{unknown}{Colors.RESET}")
+                print(f"  {Colors.BRIGHT_YELLOW}❓{Colors.RESET} {Colors.BRIGHT_WHITE}Dispositivos Desconhecidos:{Colors.RESET} {Colors.BRIGHT_YELLOW}{unknown}{Colors.RESET}")
             print()
     else:
         print_error("Nenhum host vivo encontrado.")
+    
+    return live_hosts
 
 

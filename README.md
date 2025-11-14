@@ -40,12 +40,14 @@
 **Detecta dispositivos** ativos na sua rede local  
 **Identifica fabricantes** de dispositivos através de endereços MAC  
 **Classifica dispositivos** por tipo (routers, computadores, IoT, etc.)  
-**Exporta dados** em formatos PCAP e TXT para análise posterior  
+**Escaneia portas** TCP com detecção de serviços e banner grabbing  
+**Gera relatórios HTML** profissionais dos escaneamentos  
+**Exporta dados** em formatos PCAP, TXT e HTML para análise posterior  
 **Autenticação segura** com hash SHA-256 para proteger o acesso  
 
 ---
 
-## Principais
+## Características Principais
 
 ### Captura e Análise de Pacotes
 - Capture tráfego de rede de qualquer interface de rede
@@ -60,6 +62,22 @@
 - Resolução de hostnames quando disponível
 - Estatísticas detalhadas da rede
 
+### Escaneamento de Portas
+- Escaneamento TCP SYN (stealth scan) e Connect scan
+- Detecção automática de serviços comuns (HTTP, SSH, FTP, etc.)
+- Banner grabbing para identificar versões de serviços
+- Escaneamento paralelo com múltiplas threads
+- Suporte para portas comuns, ranges e listas personalizadas
+- Estatísticas detalhadas (abertas, fechadas, filtradas)
+
+### Geração de Relatórios HTML
+- Relatórios HTML profissionais e responsivos
+- Design moderno com tema escuro
+- Tabelas formatadas de hosts e portas
+- Estatísticas visuais com badges e cards
+- Informações completas do escaneamento
+- Pronto para impressão e compartilhamento
+
 ### Segurança
 - Autenticação com senha protegida por SHA-256
 - Armazenamento seguro de credenciais
@@ -68,6 +86,7 @@
 ### Exportação de Dados
 - Formato **PCAP** (compatível com Wireshark)
 - Formato **TXT** (análise textual)
+- Formato **HTML** (relatórios profissionais)
 - Facilita análise posterior e compartilhamento
 
 ---
@@ -78,6 +97,7 @@
 - **Python 3.7 ou superior**
 - **Biblioteca Scapy** (instalada automaticamente)
 - **Biblioteca mac-vendor-lookup** (instalada automaticamente)
+- **Biblioteca colorama** (instalada automaticamente)
 
 ### Permissões
 ⚠️ **IMPORTANTE**: A ferramenta requer privilégios de administrador para acessar interfaces de rede.
@@ -91,16 +111,16 @@
 
 ### Passo 1: Clonar o Repositório
 
-```bash
-git clone https://github.com/Pawar-Tushar/SecureNet-Analyzer.git
-cd SecureNet-Analyzer
-```
+   ```bash
+   git clone https://github.com/Pawar-Tushar/SecureNet-Analyzer.git
+    cd SecureNet-Analyzer
+    ```
 
 ### Passo 2: Instalar Dependências
 
-```bash
-pip install -r requirements.txt
-```
+    ```bash
+    pip install -r requirements.txt
+    ```
 
 Ou usando pip3:
 
@@ -110,7 +130,7 @@ pip3 install -r requirements.txt
 
 ### Passo 3: Verificar Instalação
 
-```bash
+    ```bash
 python3 Main.py --help
 ```
 
@@ -122,7 +142,7 @@ Se tudo estiver correto, você verá o banner do **Lumethros Netrix** e as opç�
 
 ### Estrutura de Comandos
 
-```bash
+    ```bash
 sudo python3 Main.py [modo] [opções]
 ```
 
@@ -132,6 +152,7 @@ sudo python3 Main.py [modo] [opções]
 |------|-----------|-----|
 | `c` | **Capture Mode** - Captura pacotes de rede | `python3 Main.py c --i en0 --pc 100` |
 | `lh` | **Live Host Detection** - Detecta dispositivos na rede | `python3 Main.py lh --ip 192.168.1.1` |
+| `ps` | **Port Scanner** - Escaneia portas TCP de um host | `python3 Main.py ps --ip 192.168.1.1` |
 
 ### Opções Disponíveis
 
@@ -153,6 +174,19 @@ sudo python3 Main.py [modo] [opções]
 |-------|-----------|---------|
 | `--ip` | Seu endereço IP na rede | `--ip 192.168.1.100` |
 | `--i` | Interface de rede (opcional) | `--i en0` |
+| `--report` | Gerar relatório HTML | `--report network_report.html` |
+
+#### Para Escaneamento de Portas (`ps`)
+
+| Opção | Descrição | Exemplo |
+|-------|-----------|---------|
+| `--ip` | Endereço IP alvo | `--ip 192.168.1.1` |
+| `--ports` | Portas para escanear | `--ports common` ou `--ports 1-1000` ou `--ports 80,443,8080` |
+| `--scan-type` | Tipo de escaneamento | `--scan-type syn` ou `--scan-type connect` |
+| `--threads` | Número de threads paralelas | `--threads 100` (padrão: 100) |
+| `--timeout` | Timeout por porta (segundos) | `--timeout 1` (padrão: 1) |
+| `--banner` | Tentar obter banners dos serviços | `--banner` |
+| `--report` | Gerar relatório HTML | `--report port_scan.html` |
 
 ---
 
@@ -201,6 +235,51 @@ sudo python3 Main.py c --i Wi-Fi --pc 200 --f "src host 192.168.1.1" --a --s --t
 - Captura 200 pacotes da interface Wi-Fi
 - Filtra apenas tráfego do IP 192.168.1.1
 - Analisa e salva em formato TXT
+
+### Exemplo 5: Escanear Portas Comuns
+
+```bash
+sudo python3 Main.py ps --ip 192.168.1.1 --ports common
+```
+
+**O que faz:**
+- Escaneia portas comuns (21, 22, 23, 25, 53, 80, 443, etc.)
+- Detecta serviços rodando
+- Mostra portas abertas e seus serviços
+
+### Exemplo 6: Escaneamento Completo com Banner Grabbing
+
+```bash
+sudo python3 Main.py ps --ip 192.168.1.1 --ports 1-1000 --scan-type syn --banner --report scan_report.html
+```
+
+**O que faz:**
+- Escaneia portas de 1 a 1000
+- Usa escaneamento SYN (stealth)
+- Tenta obter banners dos serviços
+- Gera relatório HTML completo
+
+### Exemplo 7: Detecção de Hosts com Relatório
+
+```bash
+sudo python3 Main.py lh --ip 192.168.1.100 --i en0 --report network_report.html
+```
+
+**O que faz:**
+- Detecta todos os hosts vivos na rede
+- Identifica vendors e tipos de dispositivos
+- Gera relatório HTML profissional com todas as informações
+
+### Exemplo 8: Escaneamento Rápido de Portas Específicas
+
+```bash
+sudo python3 Main.py ps --ip 192.168.1.1 --ports 80,443,8080,8443 --banner
+```
+
+**O que faz:**
+- Escaneia apenas portas HTTP/HTTPS comuns
+- Obtém banners dos serviços
+- Execução rápida e focada
 
 ---
 
@@ -275,6 +354,27 @@ pip3 install --upgrade -r requirements.txt
 - Tente uma interface de rede diferente
 - Verifique se há firewall ativo
 
+### Problema: Port Scanner não encontra portas abertas
+
+**Possíveis causas:**
+- Firewall bloqueando conexões
+- Host não está acessível
+- Timeout muito curto
+- Portas realmente fechadas
+
+**Solução:**
+- Aumente o timeout: `--timeout 3`
+- Tente escaneamento Connect: `--scan-type connect`
+- Verifique conectividade: `ping <ip>`
+- Verifique se o host está na mesma rede
+
+### Problema: Relatório HTML não é gerado
+
+**Solução:**
+- Verifique se o nome do arquivo termina com `.html`
+- Verifique permissões de escrita no diretório
+- Certifique-se de que há dados para gerar o relatório (hosts ou portas detectadas)
+
 ---
 
 ## ⚖️ Aviso Legal
@@ -311,7 +411,12 @@ Este projeto está licenciado sob a **MIT License** - veja o arquivo [LICENSE](L
 ---
 
 ## 🙏 Agradecimentos
-Aos nossos professores fodas que tornaram isso possível. Tmj rapaziada do TI!
+
+- **Scapy**: Por fornecer funcionalidade poderosa para criação e envio de pacotes
+- **Python 3.x**: Pela simplicidade e flexibilidade para programação de rede
+- **mac-vendor-lookup**: Por fornecer identificação de fabricantes via MAC
+- **Wireshark**: Por ser uma ferramenta confiável para análise de arquivos PCAP
+- Aos nossos professores que tornaram isso possível. Tmj rapaziada do TI!
 
 ---
 
@@ -326,7 +431,16 @@ Para dúvidas, problemas ou sugestões:
 
 ## Conclusão
 
-**Lumethros Netrix** é uma ferramenta robusta e versátil projetada para monitoramento de segurança de rede, análise de pacotes e detecção de vulnerabilidades. Seja você um administrador de rede, um profissional de segurança cibernética ou um testador de penetração, esta ferramenta fornecerá insights bons de verdade sobre o comportamento da rede, melhorará o monitoramento de segurança e ajudará a identificar potenciais ameaças e vulnerabilidades.
+**Lumethros Netrix** é uma ferramenta robusta e versátil projetada para monitoramento de segurança de rede, análise de pacotes, detecção de hosts vivos, escaneamento de portas e geração de relatórios profissionais. 
+
+Com funcionalidades avançadas como:
+- **Detecção de hosts** com identificação de vendors e tipos de dispositivos
+- **Escaneamento de portas** TCP com banner grabbing
+- **Geração de relatórios HTML** profissionais
+- **Interface visual** moderna com ASCII art
+- **Autenticação segura** para proteção de acesso
+
+Seja você um administrador de rede, um profissional de segurança cibernética ou um testador de penetração, esta ferramenta fornecerá insights valiosos sobre o comportamento da rede, melhorará o monitoramento de segurança e ajudará a identificar potenciais ameaças e vulnerabilidades.
 
 **Lembre-se: Use com responsabilidade e sempre com autorização adequada!**
 

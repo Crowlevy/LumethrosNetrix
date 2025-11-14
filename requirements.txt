@@ -2,5 +2,4 @@ scapy
 argparse
 logging
 mac-vendor-lookup
-hashlib
 colorama

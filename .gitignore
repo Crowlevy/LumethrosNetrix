@@ -11,3 +11,5 @@ capture.txt
 *.pyz
 *.pywz
 *.pyzw
+*.pcap
+*.html
