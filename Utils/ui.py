@@ -8,7 +8,7 @@ import time
 import re
 from typing import Optional
 
-# Cores ANSI para terminal
+# cores ANSI para terminal
 class Colors:
     """ANSI color codes for terminal output"""
     # Cores básicas
