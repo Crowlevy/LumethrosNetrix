@@ -3,3 +3,6 @@ argparse
 logging
 mac-vendor-lookup
 colorama
+flask
+flask-socketio
+eventlet
