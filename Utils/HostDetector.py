@@ -6,7 +6,7 @@ import time
 import socket
 import subprocess
 import re
-from scapy.all import ARP, Ether, srp, IP, TCP
+from scapy.all import ARP, Ether, srp, IP, TCP, ICMP, sr1
 from mac_vendor_lookup import MacLookup
 from mac_vendor_lookup import VendorNotFoundError
 from Utils.ui import (
@@ -258,6 +258,37 @@ def detect_device_type(vendor, mac, ip):
         device_type = "Router/Gateway (likely)"
     
     return device_type
+
+def detect_os(ip_address):
+    """
+    tenta detectar o sistema operacional baseado no ttl do pacote icmp
+    ttl aproximados:
+    - linux/unix/android/mac: 64
+    - windows: 128
+    - cisco/network devices: 255
+    """
+    try:
+        #envia um pacote icmp echo request
+        pkt = IP(dst=ip_address)/ICMP()
+        #espera pela resposta (timeout curto para não demorar muito)
+        resp = sr1(pkt, timeout=1, verbose=0)
+        
+        if resp:
+            ttl = resp.ttl
+            
+            #lógica simples de fingerprinting baseada em ttl
+            if ttl <= 64:
+                return "Linux/Unix/Mac"
+            elif ttl <= 128:
+                return "Windows"
+            elif ttl <= 255:
+                return "Cisco/Network Device"
+            else:
+                return "Unknown"
+    except Exception:
+        pass
+    
+    return "Unknown"
 
 def get_hostname_from_arp(ip):
     """tenta obter hostname da tabela ARP do sistema"""
@@ -520,6 +551,7 @@ def detect_live_hosts(local_ip, interface=None):
         vendor = get_mac_vendor(received.hwsrc)
         device_type = detect_device_type(vendor, received.hwsrc, received.psrc)
         hostname = get_hostname(received.psrc)
+        os_detected = detect_os(received.psrc)
         
         #n encontrou hostname e é o IP local, tenta obter do sistema
         if not hostname and received.psrc == local_ip:
@@ -543,7 +575,8 @@ def detect_live_hosts(local_ip, interface=None):
             "mac": received.hwsrc,
             "vendor": vendor,
             "device_type": device_type,
-            "hostname": hostname
+            "hostname": hostname,
+            "os": os_detected
         }
         live_hosts.append(host_info)
     
@@ -556,8 +589,8 @@ def detect_live_hosts(local_ip, interface=None):
         
         live_hosts.sort(key=lambda x: ipaddress.IPv4Address(x['ip']))
         
-        widths = [18, 20, 25, 35, 20]
-        headers = ["IP Address", "MAC Address", "Hostname", "Vendor", "Device Type"]
+        widths = [16, 18, 20, 25, 20, 15]
+        headers = ["IP Address", "MAC Address", "Hostname", "Vendor", "Device Type", "OS"]
         
         print_table_header(headers, widths, Colors.RED)
         
@@ -568,18 +601,19 @@ def detect_live_hosts(local_ip, interface=None):
             
             vendor_info = host['vendor'] if host['vendor'] != "Unknown" else f"{Colors.DIM}Unknown{Colors.RESET}"
             device_type = host['device_type'] if host['device_type'] else f"{Colors.DIM}-{Colors.RESET}"
+            os_info = host['os']
             
             #trunca vendor se muito longo
-            if len(vendor_info.replace(Colors.DIM, '').replace(Colors.RESET, '')) > 33:
-                vendor_info = vendor_info[:30] + "..."
+            if len(vendor_info.replace(Colors.DIM, '').replace(Colors.RESET, '')) > 23:
+                vendor_info = vendor_info[:20] + "..."
             
             #trunca device_type se muito longo
             if len(device_type.replace(Colors.DIM, '').replace(Colors.RESET, '')) > 18:
                 device_type = device_type[:15] + "..."
             
             #trunca hostname se muito longo
-            if len(str(hostname).replace(Colors.DIM, '').replace(Colors.RESET, '')) > 23:
-                hostname = str(hostname)[:20] + "..."
+            if len(str(hostname).replace(Colors.DIM, '').replace(Colors.RESET, '')) > 18:
+                hostname = str(hostname)[:15] + "..."
             
             row_color = Colors.WHITE
             if 'router' in device_type.lower() or 'gateway' in device_type.lower():
@@ -589,7 +623,7 @@ def detect_live_hosts(local_ip, interface=None):
             elif 'unknown' in vendor_info.lower():
                 row_color = Colors.DIM
             
-            print_table_row([ip, mac, hostname, vendor_info, device_type], widths, row_color)
+            print_table_row([ip, mac, hostname, vendor_info, device_type, os_info], widths, row_color)
         
         print_table_footer(widths, Colors.RED)
         
