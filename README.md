@@ -40,8 +40,11 @@
 **Detecta dispositivos** ativos na sua rede local  
 **Identifica fabricantes** de dispositivos através de endereços MAC  
 **Classifica dispositivos** por tipo (routers, computadores, IoT, etc.)  
+**Identifica Sistema Operacional** (OS Fingerprinting) via análise TTL  
 **Escaneia portas** TCP com detecção de serviços e banner grabbing  
-**Gera relatórios HTML** profissionais dos escaneamentos  
+**Gera relatórios HTML** com topologia de rede visual  
+**Detecta ARP Spoofing** para proteger contra ataques Man-in-the-Middle  
+**Dashboard Web** em tempo real para monitoramento contínuo  
 **Exporta dados** em formatos PCAP, TXT e HTML para análise posterior  
 **Autenticação segura** com hash SHA-256 para proteger o acesso  
 
@@ -59,6 +62,7 @@
 - Varredura de rede usando requisições ARP
 - Mapeamento completo: IP, MAC, fabricante e tipo de dispositivo
 - Identificação automática de tipos de dispositivos (routers, computadores, etc.)
+- Detecção de Sistema Operacional (Windows, Linux/Mac, Cisco)
 - Resolução de hostnames quando disponível
 - Estatísticas detalhadas da rede
 
@@ -72,11 +76,16 @@
 
 ### Geração de Relatórios HTML
 - Relatórios HTML profissionais e responsivos
+- **Mapa de Topologia de Rede** interativo e visual
 - Design moderno com tema escuro
 - Tabelas formatadas de hosts e portas
 - Estatísticas visuais com badges e cards
 - Informações completas do escaneamento
 - Pronto para impressão e compartilhamento
+
+### Monitoramento e Defesa
+- **Detecção de ARP Spoofing**: Alerta sobre ataques Man-in-the-Middle
+- **Dashboard Web**: Interface gráfica em tempo real via navegador
 
 ### Segurança
 - Autenticação com senha protegida por SHA-256
@@ -98,6 +107,7 @@
 - **Biblioteca Scapy** (instalada automaticamente)
 - **Biblioteca mac-vendor-lookup** (instalada automaticamente)
 - **Biblioteca colorama** (instalada automaticamente)
+- **Flask & Flask-SocketIO** (para o Dashboard Web)
 
 ### Permissões
 ⚠️ **IMPORTANTE**: A ferramenta requer privilégios de administrador para acessar interfaces de rede.
@@ -112,8 +122,8 @@
 ### Passo 1: Clonar o Repositório
 
    ```bash
-   git clone https://github.com/Pawar-Tushar/SecureNet-Analyzer.git
-    cd SecureNet-Analyzer
+   git clone https://github.com/Crowlevy/LumethrosNetrix.git
+    cd LumethrosNetrix
     ```
 
 ### Passo 2: Instalar Dependências
@@ -153,6 +163,8 @@ sudo python3 Main.py [modo] [opções]
 | `c` | **Capture Mode** - Captura pacotes de rede | `python3 Main.py c --i en0 --pc 100` |
 | `lh` | **Live Host Detection** - Detecta dispositivos na rede | `python3 Main.py lh --ip 192.168.1.1` |
 | `ps` | **Port Scanner** - Escaneia portas TCP de um host | `python3 Main.py ps --ip 192.168.1.1` |
+| `asd` | **ARP Spoofing Detection** - Detecta ataques MITM | `python3 Main.py asd --i en0` |
+| `web` | **Web Dashboard** - Inicia o painel web em tempo real | `python3 Main.py web` |
 
 ### Opções Disponíveis
 
@@ -279,7 +291,29 @@ sudo python3 Main.py ps --ip 192.168.1.1 --ports 80,443,8080,8443 --banner
 **O que faz:**
 - Escaneia apenas portas HTTP/HTTPS comuns
 - Obtém banners dos serviços
+- Obtém banners dos serviços
 - Execução rápida e focada
+
+### Exemplo 9: Detecção de ARP Spoofing
+
+```bash
+sudo python3 Main.py asd --i en0
+```
+
+**O que faz:**
+- Monitora passivamente a rede
+- Alerta se detectar conflitos de MAC/IP (Spoofing)
+
+### Exemplo 10: Iniciar Dashboard Web
+
+```bash
+sudo python3 Main.py web
+```
+
+**O que faz:**
+- Inicia servidor web na porta 5000
+- Abre interface gráfica para monitoramento em tempo real
+- Acessível via navegador em `http://localhost:5000`
 
 ---
 
