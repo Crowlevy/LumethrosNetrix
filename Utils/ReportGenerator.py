@@ -9,7 +9,7 @@ from Utils.ui import print_success, print_error, print_info, Colors
 
 def generate_html_report(report_data, output_file="report.html"):
     """
-    Gera relatório HTML completo
+    gera relatório html completo
     
     Args:
         report_data: Dicionário com dados do relatório
@@ -214,27 +214,6 @@ def generate_html_report(report_data, output_file="report.html"):
         }}
         
         .timestamp {{
-            color: #94a3b8;
-            font-size: 0.9em;
-            margin-top: 10px;
-        }}
-        
-        .banner {{
-            font-family: 'Courier New', monospace;
-            background: #1e1e2e;
-            padding: 10px;
-            border-radius: 5px;
-            border-left: 3px solid #dc143c;
-            margin: 5px 0;
-            font-size: 0.9em;
-            color: #94a3b8;
-        }}
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>Lumethros Netrix</h1>
             <p>Relatório de Análise de Rede e Segurança</p>
             <div class="timestamp">Gerado em: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}</div>
         </div>
@@ -242,7 +221,7 @@ def generate_html_report(report_data, output_file="report.html"):
         <div class="content">
 """
         
-        #seção de Informações Gerais
+        #seção de informações gerais
         if 'general' in report_data:
             general = report_data['general']
             html_content += f"""
@@ -269,7 +248,7 @@ def generate_html_report(report_data, output_file="report.html"):
             </div>
 """
         
-        #seção de Hosts Detectados
+        #seção de hosts detectados
         if 'hosts' in report_data and report_data['hosts']:
             hosts = report_data['hosts']
             html_content += f"""
@@ -319,7 +298,104 @@ def generate_html_report(report_data, output_file="report.html"):
                     </tbody>
                 </table>
             </div>
+            
+            <div class="section">
+                <h2>🌐 Topologia da Rede</h2>
+                <p>Visualização gráfica dos dispositivos conectados.</p>
+                <div id="network-topology"></div>
+            </div>
+
+            <script type="text/javascript">
+                //criação dos dados para o gráfico
+                var nodes = new vis.DataSet([
+                    {id: 0, label: 'Gateway/Router', group: 'gateway', shape: 'image', image: 'https://img.icons8.com/color/48/000000/router.png'},
+                    //hosts detectados serão inseridos aqui
 """
+            
+            #adiciona nós para cada host
+            gateway_id = 0
+            for i, host in enumerate(hosts, 1):
+                ip = host.get('ip', 'Unknown')
+                mac = host.get('mac', '')
+                vendor = host.get('vendor', '')
+                device_type = host.get('device_type', '')
+                hostname = host.get('hostname', '')
+                
+                label = f"{ip}\\n{hostname}" if hostname and hostname != '-' else ip
+                
+                #determina o ícone/grupo baseado no tipo
+                group = 'device'
+                image = 'https://img.icons8.com/color/48/000000/workstation.png' # default
+                
+                if 'router' in str(device_type).lower() or 'gateway' in str(device_type).lower():
+                    group = 'gateway'
+                    image = 'https://img.icons8.com/color/48/000000/router.png'
+                elif 'apple' in str(vendor).lower():
+                    group = 'apple'
+                    image = 'https://img.icons8.com/color/48/000000/mac-os.png'
+                elif 'phone' in str(device_type).lower() or 'mobile' in str(device_type).lower():
+                    group = 'mobile'
+                    image = 'https://img.icons8.com/color/48/000000/smartphone--v1.png'
+                
+                #escapa aspas simples para js
+                label = label.replace("'", "\\'")
+                vendor = vendor.replace("'", "\\'")
+                
+                title = f"IP: {ip}<br>MAC: {mac}<br>Vendor: {vendor}<br>Type: {device_type}"
+                
+                html_content += f"""                    {{id: {i}, label: '{label}', title: '{title}', group: '{group}', shape: 'image', image: '{image}'}},\n"""
+
+            html_content += """                ]);
+
+                //criação das conexões (arestas)
+                var edges = new vis.DataSet([
+"""
+            #conecta todos ao gateway (simplificação, já que não sabemos a topologia real de switches)
+            for i in range(1, len(hosts) + 1):
+                html_content += f"""                    {{from: 0, to: {i}}},\n"""
+                
+            html_content += """                ]);
+
+                //configuração do container
+                var container = document.getElementById('network-topology');
+                var data = {
+                    nodes: nodes,
+                    edges: edges
+                };
+                var options = {
+                    nodes: {
+                        font: { color: '#e0e0e0' },
+                        borderWidth: 2,
+                        shadow: true
+                    },
+                    edges: {
+                        width: 2,
+                        color: { color: '#555577' },
+                        shadow: true
+                    },
+                    groups: {
+                        gateway: { color: { background: '#fbbf24', border: '#d97706' } },
+                        device: { color: { background: '#60a5fa', border: '#2563eb' } },
+                        apple: { color: { background: '#34d399', border: '#059669' } },
+                        mobile: { color: { background: '#f472b6', border: '#db2777' } }
+                    },
+                    physics: {
+                        stabilization: false,
+                        barnesHut: {
+                            gravitationalConstant: -8000,
+                            springConstant: 0.04,
+                            springLength: 95
+                        }
+                    },
+                    layout: {
+                        randomSeed: 2
+                    }
+                };
+                var network = new vis.Network(container, data, options);
+            </script>
+"""
+        
+        #seção de Portas Escaneadas
         
         #seção de Portas Escaneadas
         if 'ports' in report_data and report_data['ports']:
@@ -389,7 +465,7 @@ def generate_html_report(report_data, output_file="report.html"):
             </div>
 """
         
-        # Seção de Estatísticas da Rede
+        #seção de estatísticas da rede
         if 'statistics' in report_data:
             stats = report_data['statistics']
             html_content += f"""
