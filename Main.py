@@ -10,12 +10,14 @@ from Utils.save import save_to_txt, save_to_pcap
 from Utils.HostDetector import detect_live_hosts
 from Utils.PortScanner import scan_host
 from Utils.ReportGenerator import create_report_from_hosts, create_report_from_ports, create_combined_report
+from Utils.ArpSpoofDetector import ArpSpoofDetector
+from Web.app import start_web_server
 from Utils.ui import (
     print_banner, print_header, print_success, print_error, 
     print_warning, print_info, print_login_screen, Colors
 )
 
-PASSWORD_FILE = "password_hash.txt"  # nunca toque nesse arquivo para mudar, se tiver algum problema dele o projeto e rode novamente
+PASSWORD_FILE = "password_hash.txt"  #nunca toque nesse arquivo para mudar, se tiver algum problema dele o projeto e rode novamente
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
@@ -142,12 +144,21 @@ def start_application(args):
             print_error("Para escaneamento de portas, forneça um endereço IP usando --ip")
             sys.exit(1)
 
+    elif args.option == "asd":
+        print_header("MODO DE DETECÇÃO DE ARP SPOOFING", Colors.BRIGHT_RED)
+        detector = ArpSpoofDetector()
+        detector.start_monitoring(args.i)
+
+    elif args.option == "web":
+        print_header("MODO WEB DASHBOARD", Colors.BRIGHT_CYAN)
+        start_web_server(args.i)
+
     else:
-        print_error("Opção inválida. Use 'c' para captura, 'lh' para detecção de hosts vivos ou 'ps' para escaneamento de portas.")
+        print_error("Opção inválida. Use 'c', 'lh', 'ps', 'asd' ou 'web'.")
         sys.exit(1)
 
 def main():
-    # Print banner on startup
+    #print banner on startup
     print_banner()
     
     parser = argparse.ArgumentParser(
@@ -165,6 +176,14 @@ def main():
     sudo python3 Main.py ps --ip 192.168.1.1 --ports common
     sudo python3 Main.py ps --ip 192.168.1.1 --ports 1-1000 --scan-type syn --banner --report scan_report.html
     
+    sudo python3 Main.py ps --ip 192.168.1.1 --ports 1-1000 --scan-type syn --banner --report scan_report.html
+
+  {Colors.BRIGHT_WHITE}Detecção de ARP Spoofing:{Colors.RESET}
+    sudo python3 Main.py asd --i en0
+    
+  {Colors.BRIGHT_WHITE}Web Dashboard:{Colors.RESET}
+    sudo python3 Main.py web --i en0
+
   {Colors.BRIGHT_WHITE}Gerar Relatório:{Colors.RESET}
     sudo python3 Main.py lh --ip 192.168.1.1 --report network_report.html
     sudo python3 Main.py ps --ip 192.168.1.1 --report port_scan.html
@@ -173,8 +192,8 @@ def main():
         """
     )
 
-    parser.add_argument("option", choices=["c", "lh", "ps"], 
-                       help="Modo de operação: 'c' = Captura, 'lh' = Detecção de Hosts Vivos, 'ps' = Port Scanner")
+    parser.add_argument("option", choices=["c", "lh", "ps", "asd", "web"], 
+                       help="Modo de operação: 'c', 'lh', 'ps', 'asd', 'web'")
     parser.add_argument("--i", help="Interface de rede (ex: en0, eth0, Wi-Fi)", required=False)
     parser.add_argument("--f", help="Filtro BPF (ex: 'src host 192.168.1.1 and tcp')", default="all")
     parser.add_argument("--pc", help="Número de pacotes para capturar", type=int, required=False)
