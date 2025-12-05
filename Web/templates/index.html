@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lumethros Netrix - Dashboard em Tempo Real</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background-color: #1e1e2e;
+            color: #e0e0e0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .navbar {
+            background: linear-gradient(135deg, #dc143c 0%, #8b0000 100%);
+        }
+        .card {
+            background-color: #2a2a3e;
+            border: 1px solid #3a3a4e;
+            margin-bottom: 20px;
+        }
+        .card-header {
+            background-color: #3a3a4e;
+            border-bottom: 1px solid #4a4a5e;
+            color: #dc143c;
+            font-weight: bold;
+        }
+        .table {
+            color: #e0e0e0;
+        }
+        .table-hover tbody tr:hover {
+            color: #fff;
+            background-color: #3a3a4e;
+        }
+        .badge-router { background-color: #fbbf24; color: #1e1e2e; }
+        .badge-computer { background-color: #60a5fa; color: white; }
+        .badge-apple { background-color: #34d399; color: #1e1e2e; }
+        .badge-unknown { background-color: #94a3b8; color: #1e1e2e; }
+        
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+        }
+        .status-online { background-color: #4ade80; box-shadow: 0 0 5px #4ade80; }
+        .status-offline { background-color: #f87171; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark mb-4">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1"><i class="fas fa-network-wired me-2"></i>Lumethros Netrix Dashboard</span>
+            <span class="text-white" id="last-update">Aguardando dados...</span>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Estatísticas -->
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h5 class="card-title text-muted">Total de Dispositivos</h5>
+                        <h2 class="display-4 fw-bold text-primary" id="total-devices">0</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h5 class="card-title text-muted">Routers/Gateways</h5>
+                        <h2 class="display-4 fw-bold text-warning" id="total-routers">0</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h5 class="card-title text-muted">Dispositivos Apple</h5>
+                        <h2 class="display-4 fw-bold text-success" id="total-apple">0</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h5 class="card-title text-muted">Desconhecidos</h5>
+                        <h2 class="display-4 fw-bold text-secondary" id="total-unknown">0</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Tabela de Hosts -->
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-list me-2"></i>Hosts Detectados
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="hosts-table">
+                                <thead>
+                                    <tr>
+                                        <th>Status</th>
+                                        <th>IP</th>
+                                        <th>MAC</th>
+                                        <th>Hostname</th>
+                                        <th>Vendor</th>
+                                        <th>Tipo</th>
+                                        <th>OS</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted">Escaneando rede...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gráfico -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-chart-pie me-2"></i>Distribuição de Dispositivos
+                    </div>
+                    <div class="card-body">
+                        <canvas id="devicesChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var socket = io();
+        var devicesChart = null;
+
+        socket.on('connect', function() {
+            console.log('Conectado ao servidor WebSocket');
+        });
+
+        socket.on('network_update', function(data) {
+            console.log('Dados recebidos:', data);
+            updateDashboard(data.hosts);
+            document.getElementById('last-update').innerText = 'Última atualização: ' + data.timestamp;
+        });
+
+        function updateDashboard(hosts) {
+            // Atualiza contadores
+            document.getElementById('total-devices').innerText = hosts.length;
+            
+            let routers = 0;
+            let apple = 0;
+            let unknown = 0;
+            let computers = 0;
+            let others = 0;
+
+            const tbody = document.querySelector('#hosts-table tbody');
+            tbody.innerHTML = '';
+
+            hosts.forEach(host => {
+                // Contagem
+                const type = (host.device_type || '').toLowerCase();
+                const vendor = (host.vendor || '').toLowerCase();
+                
+                if (type.includes('router') || type.includes('gateway')) routers++;
+                else if (vendor.includes('apple')) apple++;
+                else if (type.includes('computer')) computers++;
+                else if (vendor === 'unknown' || vendor === '') unknown++;
+                else others++;
+
+                // Linha da tabela
+                const tr = document.createElement('tr');
+                
+                let badgeClass = 'badge-unknown';
+                if (type.includes('router') || type.includes('gateway')) badgeClass = 'badge-router';
+                else if (vendor.includes('apple')) badgeClass = 'badge-apple';
+                else if (type.includes('computer')) badgeClass = 'badge-computer';
+
+                tr.innerHTML = `
+                    <td><span class="status-indicator status-online"></span></td>
+                    <td><strong>${host.ip}</strong></td>
+                    <td><small>${host.mac}</small></td>
+                    <td>${host.hostname || '-'}</td>
+                    <td>${host.vendor || 'Unknown'}</td>
+                    <td><span class="badge ${badgeClass}">${host.device_type || '-'}</span></td>
+                    <td><small>${host.os || '-'}</small></td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('total-routers').innerText = routers;
+            document.getElementById('total-apple').innerText = apple;
+            document.getElementById('total-unknown').innerText = unknown;
+
+            // Atualiza Gráfico
+            updateChart(routers, apple, computers, unknown, others);
+        }
+
+        function updateChart(routers, apple, computers, unknown, others) {
+            const ctx = document.getElementById('devicesChart').getContext('2d');
+            
+            if (devicesChart) {
+                devicesChart.destroy();
+            }
+
+            devicesChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Routers', 'Apple', 'Computadores', 'Desconhecidos', 'Outros'],
+                    datasets: [{
+                        data: [routers, apple, computers, unknown, others],
+                        backgroundColor: [
+                            '#fbbf24', // Router (Yellow)
+                            '#34d399', // Apple (Green)
+                            '#60a5fa', // Computer (Blue)
+                            '#94a3b8', // Unknown (Gray)
+                            '#a78bfa'  // Others (Purple)
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: '#e0e0e0' }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
