@@ -22,6 +22,7 @@ def generate_html_report(report_data, output_file="report.html"):
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lumethros Netrix - Relatório de Análise de Rede</title>
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
     <style>
         * {{
             margin: 0;
@@ -214,6 +215,16 @@ def generate_html_report(report_data, output_file="report.html"):
         }}
         
         .timestamp {{
+            color: #94a3b8;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Lumethros Netrix</h1>
             <p>Relatório de Análise de Rede e Segurança</p>
             <div class="timestamp">Gerado em: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}</div>
         </div>
