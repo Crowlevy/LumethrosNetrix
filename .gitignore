@@ -20,3 +20,5 @@ capture.txt
 *.pywz
 *.pyzw
 *.pcap
+/venv
+*.html
